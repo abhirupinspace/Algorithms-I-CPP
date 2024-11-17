@@ -1,51 +1,72 @@
 #include <iostream>
-#include <climits>
+#include <vector>
+#include <algorithm>
 using namespace std;
 
-// Function to find the minimum number of multiplications needed to multiply the matrices
-int matrixChainOrder(int p[], int n) {
-    // m[i][j] will hold the minimum number of multiplications needed to compute the product of matrices i through j
-    int m[n][n];
+// Job structure to store job details
+struct Job {
+    int id;       // Job ID
+    int deadline; // Deadline of the job
+    int profit;   // Profit if the job is completed
+};
 
-    // No cost for multiplying one matrix
-    for (int i = 1; i < n; i++) {
-        m[i][i] = 0;
+// Comparator function to sort jobs in descending order of profit
+bool compare(Job a, Job b) {
+    return a.profit > b.profit;
+}
+
+// Function to find the maximum profit using job scheduling
+void jobScheduling(vector<Job>& jobs, int n) {
+    // Step 1: Sort all jobs in descending order of profit
+    sort(jobs.begin(), jobs.end(), compare);
+
+    // Step 2: Find the maximum deadline
+    int maxDeadline = 0;
+    for (const auto& job : jobs) {
+        maxDeadline = max(maxDeadline, job.deadline);
     }
 
-    // L is the chain length
-    for (int L = 2; L < n; L++) {
-        for (int i = 1; i < n - L + 1; i++) {
-            int j = i + L - 1;
-            m[i][j] = INT_MAX;
+    // Step 3: Create a time slots array to keep track of scheduled jobs
+    vector<int> timeSlots(maxDeadline + 1, -1); // -1 indicates the slot is free
+    int maxProfit = 0; // Total profit
+    int jobCount = 0;  // Number of jobs completed
 
-            // Calculate minimum cost of splitting the chain at every possible point
-            for (int k = i; k <= j - 1; k++) {
-                // q is the cost of splitting at k
-                int q = m[i][k] + m[k + 1][j] + p[i - 1] * p[k] * p[j];
-                if (q < m[i][j]) {
-                    m[i][j] = q;
-                }
+    // Step 4: Schedule jobs
+    for (const auto& job : jobs) {
+        // Check slots from job.deadline down to 1
+        for (int t = job.deadline; t > 0; t--) {
+            if (timeSlots[t] == -1) {
+                // Slot is free; assign this job
+                timeSlots[t] = job.id;
+                maxProfit += job.profit;
+                jobCount++;
+                break;
             }
         }
     }
 
-    // The minimum cost is found in m[1][n-1]
-    return m[1][n - 1];
+    // Step 5: Output results
+    cout << "Scheduled jobs: ";
+    for (int i = 1; i <= maxDeadline; i++) {
+        if (timeSlots[i] != -1) {
+            cout << "Job" << timeSlots[i] << " ";
+        }
+    }
+    cout << "\nTotal profit: " << maxProfit << endl;
 }
 
 int main() {
     int n;
-    cout << "Enter the number of matrices: ";
+    cout << "Enter the number of jobs: ";
     cin >> n;
 
-    int p[n + 1];
-    cout << "Enter the dimensions of matrices:\n";
-    for (int i = 0; i <= n; i++) {
-        cin >> p[i];
+    vector<Job> jobs(n);
+    cout << "Enter job details (ID, Deadline, Profit):\n";
+    for (int i = 0; i < n; i++) {
+        cin >> jobs[i].id >> jobs[i].deadline >> jobs[i].profit;
     }
 
-    int minCost = matrixChainOrder(p, n + 1);
-    cout << "Minimum number of multiplications is " << minCost << endl;
+    jobScheduling(jobs, n);
 
     return 0;
 }
